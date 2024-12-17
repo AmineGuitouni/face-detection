@@ -2,21 +2,34 @@
 
 import axios from "axios";
 
-
 export async function AddUser({
     firstName,
     lastName,
-    image
+    images
 }:{
     firstName:string,
     lastName:string,
-    image:string | null
+    images:string[]
 }) {
-    if(!firstName || !lastName || !image) return;
-    console.log(image.slice(0,100));
-    await axios.post("https://nearby-prompt-buzzard.ngrok-free.app/add_user", {
+    if(!firstName || !lastName || !images || images.length === 0) return;
+    
+    await axios.post("http://192.168.137.236:8000/add_user", {
         first_name: firstName,
         last_name: lastName,
-        image
+        images:images
     })
+}
+
+export async function GetUsers() {
+    const res = await axios.get("http://192.168.137.236:8000/get_users")
+    return res.data.map((user:any)=>({
+        id:user.user_id,
+        firstName:user.first_name,
+        lastName:user.last_name,
+    })) as {id:number, firstName:string, lastName:string, image?:string | null}[]
+}
+
+export async function CheckUser() {
+    const res = await axios.get("http://192.168.137.236:8000/check_user")
+    return null
 }

@@ -1,21 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CiImageOn } from "react-icons/ci";
 import Image from "next/image";
 import { toast } from "react-toastify";
-import { AddUser } from "@/actions/image.actions";
+import { AddUser, CheckUser, GetUsers } from "@/actions/image.actions";
 
 export default function Dashboard() {
   // Mock user data
-  const [users, setUsers] = useState<{id:number, firstName:string, lastName:string, image:string | null}[]>([
+  const [users, setUsers] = useState<{id:number, firstName:string, lastName:string, image?:string | null}[]>([
   ]);
 
-  const [newUser, setNewUser] = useState<{firstName:string, lastName:string, image:string | null}>({ firstName: "", lastName: "", image: null });
+  const [newUser, setNewUser] = useState<{firstName:string, lastName:string, images:string[]}>({ firstName: "", lastName: "", images: [] });
+
+  useEffect(()=>{
+    CheckUser()
+    GetUsers().then((data:any)=>{
+      setUsers(data);
+    })
+  },[])
 
   // Add user
   const addUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (newUser.firstName && newUser.lastName && newUser.image) {
+    
+    if (newUser.firstName && newUser.lastName && newUser.images.length > 0) {
       // setUsers([...users, { id: users.length + 1, ...newUser }]);
       // setNewUser({ name: "", email: "", image: null });
       
@@ -26,6 +34,10 @@ export default function Dashboard() {
       .catch((error:any)=>{
         console.log(error);
         toast.error("Error adding user!", error);
+      })
+
+      GetUsers().then((data:any)=>{
+        setUsers(data);
       })
     } else {
       toast.error("All fields are required!");
@@ -48,14 +60,14 @@ export default function Dashboard() {
           <form onSubmit={(e)=>{addUser(e)}} className="mt-4 space-y-4">
             <input
               type="text"
-              placeholder="Name"
+              placeholder="First Name"
               value={newUser.firstName}
               onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
-              type="email"
-              placeholder="Email"
+              type="text"
+              placeholder="Last Name"
               value={newUser.lastName}
               onChange={(e) =>
                 setNewUser({ ...newUser, lastName: e.target.value })
@@ -63,8 +75,10 @@ export default function Dashboard() {
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {
-              newUser.image ? <div className="flex justify-center items-center p-4 border rounded-md">
-                <Image src={newUser.image} alt="image" width={100} height={100}/>
+              newUser.images ? <div className="flex justify-center items-center p-4 border rounded-md">
+                {newUser.images.map((image, index) => (
+                  <Image key={index} src={image} alt="image" width={100} height={100}/>
+                ))}
               </div> : null
             }
             <label className="w-full p-4 flex justify-center items-center shadow-sm rounded-md hover:bg-gray-50 transition-all duration-200 cursor-pointer border">
@@ -75,11 +89,12 @@ export default function Dashboard() {
                 accept="image/*"
                 className="hidden"
                 onChange={(e)=>{
+                  console.log("image")
                   const file = e.target.files?.[0];
                   if (file) {
                     const reader = new FileReader();
                     reader.onload = () => {
-                      setNewUser({ ...newUser, image: reader.result as string });
+                      setNewUser(prv => ({ ...prv, images: [...prv.images, reader.result as string] }));
                     };
                     reader.readAsDataURL(file);
                   }
@@ -102,8 +117,8 @@ export default function Dashboard() {
             <thead>
               <tr>
                 <th className="border-b-2 pb-2 text-left">ID</th>
-                <th className="border-b-2 pb-2 text-left">Name</th>
-                <th className="border-b-2 pb-2 text-left">Email</th>
+                <th className="border-b-2 pb-2 text-left">First Name</th>
+                <th className="border-b-2 pb-2 text-left">Last Name</th>
                 <th className="border-b-2 pb-2 text-left">Actions</th>
               </tr>
             </thead>
